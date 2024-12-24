@@ -1,0 +1,33 @@
+{
+  "name": "@jimpick/mcp-json-db-collection-server",
+  "version": "0.0.1",
+  "description": "Use Model Context Protocol with multiple Fireproof JSON document databases",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "mcp-json-db-collection-server": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "publish": "echo pnpm publish --no-git-checks --access public --otp code"
+  },
+  "dependencies": {
+    "@adviser/cement": "^0.2.41",
+    "@jimpick/fireproof-cloud": "0.19.118-jim2",
+    "@jimpick/fireproof-core": "0.19.118-jim2",
+    "@ipld/unixfs": "^3.0.0",
+    "@modelcontextprotocol/sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  },
+  "author": "Jim Pick @jimpick.com",
+  "license": "MIT"
+}
