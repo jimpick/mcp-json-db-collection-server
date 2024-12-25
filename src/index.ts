@@ -9,6 +9,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ServerNotificationSchema,
   ToolSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { fireproof, Database } from "@jimpick/fireproof-core";
@@ -64,6 +65,10 @@ const SaveJsonDocToDbArgsSchema = z.object({
   doc: z.object({})
 });
 
+const QueryJsonDocsFromDbArgsSchema = z.object({
+  databaseName: z.string(),
+  sortField: z.string(),
+});
 
 const ToolInputSchema = ToolSchema.shape.inputSchema;
 type ToolInput = z.infer<typeof ToolInputSchema>;
@@ -106,6 +111,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["doc", "databaseName"],
         },
       },
+      {
+        name: "query_json_docs_from_db",
+        description: "Query JSON documents sorted by a field from a document database",
+        inputSchema: zodToJsonSchema(QueryJsonDocsFromDbArgsSchema) as ToolInput,
+        required: ["sortField"],
+      }
       /*
       {
         name: "load_json_doc",
@@ -398,9 +409,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ]
         }
       }
+
+      case "query_json_docs_from_db": {
+        const parsed = QueryJsonDocsFromDbArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for query_json_docs_from_db: ${parsed.error}`);
+        }
+
+        const dbName = parsed.data.databaseName;
+        if (!dbs[dbName]) {
+          const newDb = fireproof(dbName);
+          dbs[dbName] = { db: newDb };
+        }
+        const db = dbs[dbName].db;
+
+        const results = await db.query(parsed.data.sortField, {
+          includeDocs: true,
+          descending: true,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(results.rows.map((row) => row.doc)),
+            },
+          ],
+        };
+      }
+
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
+
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
