@@ -11,11 +11,17 @@ import {
   ListToolsRequestSchema,
   ToolSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { fireproof } from "@jimpick/fireproof-core";
+import { fireproof, Database } from "@jimpick/fireproof-core";
 import { connect } from "@jimpick/fireproof-cloud";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import util from "node:util";
+
+interface DbInfo {
+  db: Database;
+}
+
+const dbs: Record<string, DbInfo> = {};
 
 const localJsonDbCollection = fireproof("local_json_db_collection");
 
@@ -59,6 +65,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: "create_json_doc_database",
         description: "Create a JSON document database",
         inputSchema: zodToJsonSchema(CreateDbArgsSchema) as ToolInput,
+      },
+      {
+        name: "list_json_doc_databases",
+        description: 
+          "Returns the list of JSON document databases. " +
+          "Use this to understand which databases are available before trying to access JSON documents.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
       },
       /*
       {
@@ -296,11 +313,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error(`Invalid arguments for create_json_doc_database: ${parsed.error}`);
         }
 
+        const newDb = fireproof(parsed.data.databaseName);
+        dbs[parsed.data.databaseName] = { db: newDb };
+
         return {
           content: [
             {
               type: "text",
               text: `Created JSON document database: ${parsed.data.databaseName}`,
+            }
+          ]
+        }
+      }
+
+      case "list_json_doc_databases": {
+        const dbNames = Object.keys(dbs);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(dbNames)
             }
           ]
         }
