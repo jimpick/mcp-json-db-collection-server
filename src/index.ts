@@ -16,6 +16,7 @@ import { connect } from "@jimpick/fireproof-cloud";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import util from "node:util";
+import { parse } from "node:path";
 
 interface JsonDocDb {
   readonly name: string;
@@ -58,6 +59,12 @@ const CreateDbArgsSchema = z.object({
   databaseName: z.string(),
 });
 
+const SaveJsonDocToDbArgsSchema = z.object({
+  databaseName: z.string(),
+  doc: z.object({})
+});
+
+
 const ToolInputSchema = ToolSchema.shape.inputSchema;
 type ToolInput = z.infer<typeof ToolInputSchema>;
 
@@ -81,10 +88,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: [],
         },
       },
-      /*
       {
-        name: "save_json_doc",
-        description: "Save a JSON document",
+        name: "save_json_doc_to_db",
+        description: "Save a JSON document to a document database",
         inputSchema: {
           type: "object",
           properties: {
@@ -92,10 +98,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "object",
               description: "JSON document to save",
             },
+            databaseName: {
+              type: "string",
+              description: "document database to save to",
+            },
           },
-          required: ["doc"],
+          required: ["doc", "databaseName"],
         },
       },
+      /*
       {
         name: "load_json_doc",
         description: "Load a JSON document by ID",
@@ -316,7 +327,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!parsed.success) {
           throw new Error(`Invalid arguments for create_json_doc_database: ${parsed.error}`);
         }
-
+        const results = await localJsonDbCollection.query<string, JsonDocDb>(
+          "name",
+          {
+            range: [
+              parsed.data.databaseName,
+              parsed.data.databaseName
+            ]
+          });
+        if (results.rows.length > 0) {
+          throw new Error(`Database already exists: ${parsed.data.databaseName}`);
+        }
         const newDb = fireproof(parsed.data.databaseName);
         dbs[parsed.data.databaseName] = { db: newDb };
         await localJsonDbCollection.put<JsonDocDb>({
@@ -351,6 +372,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
       }
 
+      case "save_json_doc_to_db": {
+        const parsed = SaveJsonDocToDbArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for save_json_doc_to_db: ${parsed.error}`);
+        }
+
+        const dbName = parsed.data.databaseName;
+        if (!dbs[dbName]) {
+          const newDb = fireproof(dbName);
+          dbs[dbName] = { db: newDb };
+        }
+        const db = dbs[dbName].db;
+        const response = await db.put({
+          ...parsed.data.doc,
+          created: Date.now(),
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Saved document with ID: ${response.id} to database: ${dbName}`,
+            }
+          ]
+        }
+      }
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
