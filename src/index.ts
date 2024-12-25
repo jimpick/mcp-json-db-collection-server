@@ -17,6 +17,11 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import util from "node:util";
 
+interface JsonDocDb {
+  readonly name: string;
+  readonly created: number;
+}
+
 interface DbInfo {
   db: Database;
 }
@@ -24,7 +29,6 @@ interface DbInfo {
 const dbs: Record<string, DbInfo> = {};
 
 const localJsonDbCollection = fireproof("local_json_db_collection");
-
 
 /*()
 let cxGlobal: any = null;
@@ -68,7 +72,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "list_json_doc_databases",
-        description: 
+        description:
           "Returns the list of JSON document databases. " +
           "Use this to understand which databases are available before trying to access JSON documents.",
         inputSchema: {
@@ -315,6 +319,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const newDb = fireproof(parsed.data.databaseName);
         dbs[parsed.data.databaseName] = { db: newDb };
+        await localJsonDbCollection.put<JsonDocDb>({
+          name: parsed.data.databaseName,
+          created: Date.now(),
+        });
 
         return {
           content: [
@@ -327,7 +335,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list_json_doc_databases": {
-        const dbNames = Object.keys(dbs);
+        const results = await localJsonDbCollection.query<string, JsonDocDb>("name", {
+          includeDocs: true,
+          descending: true,
+        })
+        const dbNames = results.rows.flatMap(row => row.doc ? [row.doc.name] : []);
 
         return {
           content: [
