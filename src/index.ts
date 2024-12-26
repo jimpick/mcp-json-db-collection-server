@@ -70,6 +70,11 @@ const QueryJsonDocsFromDbArgsSchema = z.object({
   sortField: z.string(),
 });
 
+const LoadJsonDocFromDbArgsSchema = z.object({
+  databaseName: z.string(),
+  id: z.string(),
+});
+
 const ToolInputSchema = ToolSchema.shape.inputSchema;
 type ToolInput = z.infer<typeof ToolInputSchema>;
 
@@ -113,14 +118,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "query_json_docs_from_db",
-        description: "Query JSON documents sorted by a field from a document database",
+        description: "Query JSON documents sorted by a field from a document database. " +
+          "If no sortField is provided, use the _id field.",
         inputSchema: zodToJsonSchema(QueryJsonDocsFromDbArgsSchema) as ToolInput,
         required: ["sortField"],
-      }
-      /*
+      },
       {
-        name: "load_json_doc",
-        description: "Load a JSON document by ID",
+        name: "load_json_doc_from_db",
+        description: "Load a JSON document by ID from a document database",
         inputSchema: {
           type: "object",
           properties: {
@@ -128,10 +133,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: "ID of document to load",
             },
+            databaseName: {
+              type: "string",
+              description: "name of document database to load from",
+            },
           },
+          // properties: zodToJsonSchema(LoadJsonDocFromDbArgsSchema),
           required: ["id"],
         },
       },
+      /*
       {
         name: "delete_json_doc",
         description: "Delete a JSON document by ID",
@@ -388,6 +399,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!parsed.success) {
           throw new Error(`Invalid arguments for save_json_doc_to_db: ${parsed.error}`);
         }
+        const doc = request.params.arguments?.doc;
+        if (!doc) {
+          throw new Error("Document is required");
+        }
 
         const dbName = parsed.data.databaseName;
         if (!dbs[dbName]) {
@@ -396,7 +411,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const db = dbs[dbName].db;
         const response = await db.put({
-          ...parsed.data.doc,
+          ...doc,
           created: Date.now(),
         });
 
@@ -433,6 +448,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(results.rows.map((row) => row.doc)),
+            },
+          ],
+        };
+      }
+
+      case "load_json_doc_from_db": {
+        const parsed = LoadJsonDocFromDbArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for load_json_doc_from_db: ${parsed.error}`);
+        }
+
+        const dbName = parsed.data.databaseName;
+        if (!dbs[dbName]) {
+          const newDb = fireproof(dbName);
+          dbs[dbName] = { db: newDb };
+        }
+        const db = dbs[dbName].db;
+
+        const doc = await db.get(parsed.data.id);
+        console.error("doc", doc);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(doc),
             },
           ],
         };
