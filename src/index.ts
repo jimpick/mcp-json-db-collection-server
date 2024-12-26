@@ -75,6 +75,11 @@ const LoadJsonDocFromDbArgsSchema = z.object({
   id: z.string(),
 });
 
+const DeleteJsonDocFromDbArgsSchema = z.object({
+  databaseName: z.string(),
+  id: z.string(),
+});
+
 const ToolInputSchema = ToolSchema.shape.inputSchema;
 type ToolInput = z.infer<typeof ToolInputSchema>;
 
@@ -142,10 +147,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["id"],
         },
       },
-      /*
       {
-        name: "delete_json_doc",
-        description: "Delete a JSON document by ID",
+        name: "delete_json_doc_from_db",
+        description: "Delete a JSON document by ID from a document database",
         inputSchema: {
           type: "object",
           properties: {
@@ -153,24 +157,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: "ID of document to delete",
             },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "query_json_docs",
-        description: "Query JSON documents sorted by a field",
-        inputSchema: {
-          type: "object",
-          properties: {
-            sort_field: {
+            databaseName: {
               type: "string",
-              description: "Field to sort results by",
+              description: "name of document database to delete from",
             },
-          },
-          required: ["sort_field"],
+          }
         },
       },
+      /*
       {
         name: "dump_connection",
         description: "Dump connection info",
@@ -192,96 +186,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     ],
   };
 });
-
-/*
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  switch (request.params.name) {
-  */
-/*
-case "save_json_doc": {
-  const doc = request.params.arguments?.doc;
-  if (!doc) {
-    throw new Error("Document is required");
-  }
- 
-  const response = await db.put({
-    ...doc,
-    created: Date.now(),
-  });
- 
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Saved document with ID: ${response.id}`,
-      },
-    ],
-  };
-}
-*/
-
-/*
-case "delete_json_doc": {
-  const id = String(request.params.arguments?.id);
-  if (!id) {
-    throw new Error("ID is required");
-  }
- 
-  await db.del(id);
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Deleted document with ID: ${id}`,
-      },
-    ],
-  };
-}
-*/
-
-/*
-case "load_json_doc": {
-  const id = String(request.params.arguments?.id);
-  if (!id) {
-    throw new Error("ID is required");
-  }
- 
-  const doc = await db.get(id);
- 
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(doc),
-      },
-    ],
-  };
-}
-*/
-
-/*
-case "query_json_docs": {
-  const sortField = String(request.params.arguments?.sort_field);
-  if (!sortField) {
-    throw new Error("Sort field is required");
-  }
- 
-  const results = await db.query(sortField, {
-    includeDocs: true,
-    descending: true,
-    limit: 10,
-  });
- 
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(results.rows.map((row) => row.doc)),
-      },
-    ],
-  };
-}
-*/
 
 /*
 case "dump_connection": {
@@ -307,35 +211,6 @@ case "get_dashboard_url": {
     ],
   };
 }
-*/
-
-/*
-default:
-  throw new Error("Unknown tool");
-}
-});
-*/
-
-/*
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  try {
-    const { name, arguments: args } = request.params;
- 
-    switch (name) {
-      case "read_file": {
-      }
- 
-      default:
-        throw new Error(`Unknown tool: ${name}`);
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: `Error: ${errorMessage}` }],
-      isError: true,
-    };
-  }
-});
 */
 
 
@@ -474,6 +349,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(doc),
+            },
+          ],
+        };
+      }
+
+      case "delete_json_doc_from_db": {
+        const parsed = DeleteJsonDocFromDbArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for delete_json_doc_from_db: ${parsed.error}`);
+        }
+
+        const dbName = parsed.data.databaseName;
+        if (!dbs[dbName]) {
+          const newDb = fireproof(dbName);
+          dbs[dbName] = { db: newDb };
+        }
+        const db = dbs[dbName].db;
+
+        await db.del(parsed.data.id);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Deleted document with ID: ${parsed.data.id}`,
             },
           ],
         };
