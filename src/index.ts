@@ -60,6 +60,10 @@ const CreateDbArgsSchema = z.object({
   databaseName: z.string(),
 });
 
+const DeleteDbArgsSchema = z.object({
+  databaseName: z.string(),
+});
+
 const SaveJsonDocToDbArgsSchema = z.object({
   databaseName: z.string(),
   doc: z.object({})
@@ -91,6 +95,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: "create_json_doc_database",
         description: "Create a JSON document database",
         inputSchema: zodToJsonSchema(CreateDbArgsSchema) as ToolInput,
+      },
+      {
+        name: "delete_json_doc_database",
+        description: "Delete a JSON document database",
+        inputSchema: zodToJsonSchema(DeleteDbArgsSchema) as ToolInput,
+        required: ["databaseName"],
       },
       {
         name: "list_json_doc_databases",
@@ -247,6 +257,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Created JSON document database: ${parsed.data.databaseName}`,
+            }
+          ]
+        }
+      }
+
+      case "delete_json_doc_database": {
+        const parsed = DeleteDbArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for delete_json_doc_database: ${parsed.error}`);
+        }
+        const results = await localJsonDbCollection.query<string, JsonDocDb>(
+          "name",
+          {
+            range: [
+              parsed.data.databaseName,
+              parsed.data.databaseName
+            ]
+          });
+        if (results.rows.length != 1) {
+          throw new Error(`Database not found: ${parsed.data.databaseName}`);
+        }
+        await localJsonDbCollection.del(results.rows[0].id);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Deleted JSON document database: ${parsed.data.databaseName}`,
             }
           ]
         }
