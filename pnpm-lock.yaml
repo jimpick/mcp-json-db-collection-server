@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@adviser/cement':
+        specifier: ^0.3.4
+        version: 0.3.4(typescript@5.7.2)
       '@jimpick/fireproof-cloud':
         specifier: 0.19.118-jim2
         version: 0.19.118-jim2(react@18.3.1)(typescript@5.7.2)
@@ -36,6 +39,10 @@ packages:
   '@adviser/cement@0.2.45':
     resolution: {integrity: sha512-322C+IWgUhjomzTKohy86maLoOASUf5ZrIAs01dfZF2NLey/6GlUi3vehR4MpDXo/8lceuvemVCw/wd7kmWOtg==}
     engines: {node: '>=16'}
+
+  '@adviser/cement@0.3.4':
+    resolution: {integrity: sha512-wG0rIHej2uvXGknp0mokM/8reXXtFg9wiWDzuXXmaxzjaae4cVG4og76SeQf9suWb+MiyPsn19B7HX+gFvIs7A==}
+    engines: {node: '>=20'}
 
   '@cloudflare/workerd-darwin-64@1.20240718.0':
     resolution: {integrity: sha512-BsPZcSCgoGnufog2GIgdPuiKicYTNyO/Dp++HbpLRH+yQdX3x4aWx83M+a0suTl1xv76dO4g9aw7SIB6OSgIyQ==}
@@ -789,6 +796,13 @@ packages:
 snapshots:
 
   '@adviser/cement@0.2.45(typescript@5.7.2)':
+    dependencies:
+      ts-essentials: 10.0.3(typescript@5.7.2)
+      yaml: 2.6.1
+    transitivePeerDependencies:
+      - typescript
+
+  '@adviser/cement@0.3.4(typescript@5.7.2)':
     dependencies:
       ts-essentials: 10.0.3(typescript@5.7.2)
       yaml: 2.6.1

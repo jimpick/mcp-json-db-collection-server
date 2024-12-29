@@ -18,6 +18,7 @@
     "publish": "echo pnpm publish --no-git-checks --access public --otp code"
   },
   "dependencies": {
+    "@adviser/cement": "^0.3.4",
     "@jimpick/fireproof-cloud": "0.19.118-jim2",
     "@jimpick/fireproof-core": "0.19.118-jim2",
     "@modelcontextprotocol/sdk": "1.0.4",

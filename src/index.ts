@@ -21,6 +21,8 @@ import { parse } from "node:path";
 
 interface JsonDocDb {
   readonly name: string;
+  remoteName?: string;
+  dashboardUrl?: string;
   readonly created: number;
 }
 
@@ -64,6 +66,10 @@ const DeleteDbArgsSchema = z.object({
   databaseName: z.string(),
 });
 
+const ConnectDbToCloudArgsSchema = z.object({
+  databaseName: z.string(),
+});
+
 const SaveJsonDocToDbArgsSchema = z.object({
   databaseName: z.string(),
   doc: z.object({})
@@ -100,6 +106,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: "delete_json_doc_database",
         description: "Delete a JSON document database",
         inputSchema: zodToJsonSchema(DeleteDbArgsSchema) as ToolInput,
+        required: ["databaseName"],
+      },
+      {
+        name: "connect_json_doc_database_to_cloud",
+        description: "Connect a JSON document database to cloud sync service. Show the dashboard URL after connecting.",
+        inputSchema: zodToJsonSchema(ConnectDbToCloudArgsSchema) as ToolInput,
         required: ["databaseName"],
       },
       {
@@ -170,6 +182,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             databaseName: {
               type: "string",
               description: "name of document database to delete from",
+            },
+          }
+        },
+      },
+      {
+        name: "connect_json_doc_database_to_cloud",
+        description: "Connect a JSON document database to cloud sync service",
+        inputSchema: {
+          type: "object",
+          properties: {
+            databaseName: {
+              type: "string",
+              description: "name of document database to connect to cloud",
             },
           }
         },
@@ -257,6 +282,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Created JSON document database: ${parsed.data.databaseName}`,
+            }
+          ]
+        }
+      }
+
+      case "connect_json_doc_database_to_cloud": {
+        const parsed = ConnectDbToCloudArgsSchema.safeParse(args);
+        if (!parsed.success) {
+          throw new Error(`Invalid arguments for connect_json_doc_database_to_cloud: ${parsed.error}`);
+        }
+        const dbName = parsed.data.databaseName;
+        const results = await localJsonDbCollection.query<string, JsonDocDb>(
+          "name",
+          {
+            range: [
+              dbName,
+              dbName
+            ]
+          });
+        if (results.rows.length != 1) {
+          throw new Error(`Database not found: ${dbName}`);
+        }
+        const doc = results.rows[0].doc!;
+        if (!dbs[dbName]) {
+          const newDb = fireproof(dbName);
+          dbs[dbName] = { db: newDb };
+        }
+        const db = dbs[dbName].db;
+        const connection = await connect(db);
+        const remoteName = connection.dashboardUrl?.getParam("remoteName");
+        // console.error("connection.dashboardUrl.remoteName", connection.dashboardUrl?.getParam("remoteName"));
+        const dashboardUrl = connection.dashboardUrl?.toString();
+        // console.error("dashboardUrl", dashboardUrl);
+        await localJsonDbCollection.put({...doc, remoteName, dashboardUrl});
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Connected JSON document database to cloud: ${dbName}, dashboard URL: ${dashboardUrl}`,
             }
           ]
         }
