@@ -18,6 +18,13 @@ Prior art: This is based on https://github.com/fireproof-storage/mcp-database-se
 
 ## Running the Server
 
+First, build it:
+
+```
+npm install
+npm build
+```
+
 To use with Claude Desktop, add the server config:
 
 On MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -28,11 +35,7 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 {
   "mcpServers": {
     "json-db-collections": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@jimpick/mcp-json-db-collection-server"
-      ]
+      "command": "<base-dir>/mcp-json-db-collection-server/build/index.js"
     }
   }
 }
