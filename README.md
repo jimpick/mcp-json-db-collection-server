@@ -1,12 +1,20 @@
 # Model Context Protocol and Fireproof Demo: JSON Document Collection Server
 
-This is a simple example of how to use a [Fireproof](https://fireproof.storage/) database in a [Model Context Protocol](https://github.com/modelcontextprotocol) server (used for plugging code and data into A.I. systems such as [Claude Desktop](https://claude.ai/download)).
+<h1>
+<img alt="Fireproof" src="./images/fp-logo.svg" height="30pt">
+❤️
+<img alt="MCP" src="./images/mcp.png" height="30pt">
+</h1>
+
+This is an example of how to use a [Fireproof](https://fireproof.storage/) database in a [Model Context Protocol](https://github.com/modelcontextprotocol) server (used for plugging code and data into A.I. systems such as [Claude Desktop](https://claude.ai/download)).
 
 This server:
 
   * allows the creation of multiple "JSON Document Databases" (implemented using Fireproof)
   * implements basic CRUD operations (Create, Read, Update, Delete) within any database and the ability to query documents sorted by any field.
   * allows sharing of any database with others using the Fireproof Cloud service and dashboard
+
+Prior art: This is based on https://github.com/fireproof-storage/mcp-database-server - it adds multiple databases plus the ability to sync to the cloud.
 
 ## Running the Server
 
@@ -30,11 +38,11 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 }
 ```
 
-# Sample Claude Desktop session
+# Sample Claude Desktop chat session
 
 Here is a sample session using Claude Desktop where I create 3 document databases and sync them to the cloud:
 
-## 1. Elements
+## 1. Chat Session: Database of Elements
 
 **human** (Dec 29, 2024, 03:59 PM)
 
@@ -92,7 +100,7 @@ Here are all the noble gases in the database, listed in order of atomic number (
 
 Each document contains detailed information about the element, including its atomic mass, density, melting and boiling points (where known), and electron configuration. Would you like to examine any specific properties or compare certain aspects of these elements?
 
-## 2. Cookie Ingredients
+## 2. Chat Session: Database of Cookie Ingredients
 
 **human** (Dec 29, 2024, 04:01 PM)
 
@@ -151,7 +159,7 @@ show ingredients as table
 
 I've organized the ingredients by type and included their amounts, units, purposes, and weight measurements. Would you like to see any additional details about specific ingredients?
 
-## 3. Horse Breeds
+## 3. Chat Session: Database of Horse Breeds
 
 **human** (Dec 29, 2024, 04:03 PM)
 
@@ -194,7 +202,7 @@ Each entry includes information about:
 
 Would you like to see the information presented in a specific way or learn more about any particular breed?
 
-## 4. Sync to Cloud
+## 4. Chat Session: Sync to Cloud
 
 **human** (Dec 29, 2024, 04:04 PM)
 
@@ -274,7 +282,7 @@ https://dashboard.fireproof.storage/fp/databases/connect?endpoint=fireproof%3A%2
 
 Now all three databases (horse_breeds, elements, and cookie_ingredients) are synchronized to the cloud and can be accessed through their respective dashboard URLs.
 
-## 5. Cleanup
+## 5. Chat Session: Cleanup
 
 **human** (Dec 29, 2024, 04:06 PM)
 
@@ -298,6 +306,14 @@ Let me verify that they're all gone.
 Confirmed - there are no remaining databases in the system. Would you like to create any new databases?
 
 **Converted to Markdown thanks to**: https://simonwillison.net/2024/Aug/8/convert-claude-json-to-markdown/
+
+# Future development ideas
+
+* prompts
+* resources
+* multiuser with permissions
+* indexing
+* generate static websites from Claude Desktop using Firebase npm libraries
 
 # Development
 
