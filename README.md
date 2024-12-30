@@ -3,7 +3,7 @@
 <h1>
 <img alt="Fireproof" src="./images/fp-logo.svg" height="30pt">
 ❤️
-<img alt="MCP" src="./images/mcp.png" height="30pt">
+<img alt="MCP" src="./images/mcp-light.png" height="30pt">
 </h1>
 
 This is an example of how to use a [Fireproof](https://fireproof.storage/) database in a [Model Context Protocol](https://github.com/modelcontextprotocol) server (used for plugging code and data into A.I. systems such as [Claude Desktop](https://claude.ai/download)).
